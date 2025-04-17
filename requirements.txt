@@ -1,0 +1,4 @@
+Flask
+NumPy --only-binary=numpy
+Pandas --only-binary=pandas
+Matplotlib --only-binary=matplotlib
