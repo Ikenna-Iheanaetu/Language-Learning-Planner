@@ -1,4 +1,4 @@
-Flask
-NumPy 
-Pandas 
-Matplotlib
+flask
+flask-cors
+python-dotenv
+google-generativeai
