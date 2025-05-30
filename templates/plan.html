@@ -51,8 +51,8 @@
 </div>
 
 <script>
-    // Example of adding milestones dynamically
-    const milestones = ["Learn 500 words", "Hold 10 conversations", "Watch a full movie"];
+    // Display milestones based on level and goal
+    const milestones = generateMilestones(scheduleData.proficiency_level, scheduleData.target_language);
     const milestoneList = document.getElementById('milestones');
     milestones.forEach(m => {
         const item = document.createElement('li');
@@ -61,7 +61,48 @@
         milestoneList.appendChild(item);
     });
 
-    // You can use fetch/AJAX to get real data from Flask here
+    // Fill calendar with activities
+    const calendarDays = document.querySelectorAll('.calendar-day');
+    scheduleData.daily_plans.forEach(plan => {
+        const dayIndex = plan.day_number;
+        if (dayIndex < calendarDays.length) {
+            const dayElement = calendarDays[dayIndex];
+            const activities = plan.activities.map(act => `
+                <div class="card mb-2 ${act.activity_type === 'Review' ? 'bg-warning' : 'bg-info'} text-white">
+                    <div class="card-body p-2">
+                        <strong>${act.duration_minutes} mins</strong><br>
+                        ${act.activity_type} - ${act.description}
+                    </div>
+                </div>
+            `).join('');
+            dayElement.innerHTML = `<h5>${plan.day}</h5>${activities}`;
+        }
+    });
+
+    function generateMilestones(level, language) {
+        const baseMilestones = [
+            `Learn 500 ${language} words`,
+            `Hold 10 conversations in ${language}`,
+            `Watch a full movie in ${language}`
+        ];
+        
+        if (level === 'beginner') {
+            return baseMilestones;
+        } else if (level === 'intermediate') {
+            return [
+                ...baseMilestones,
+                `Read a short novel in ${language}`,
+                `Write a 500-word essay in ${language}`
+            ];
+        } else {
+            return [
+                ...baseMilestones,
+                `Read a full novel in ${language}`,
+                `Write a 1000-word essay in ${language}`,
+                `Give a presentation in ${language}`
+            ];
+        }
+    }
 </script>
 
 </body>

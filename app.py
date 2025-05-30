@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, jsonify
 import os
 import json
@@ -16,6 +15,20 @@ app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "dev_secret_key")
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/plan', methods=['POST'])
+def plan():
+    # Get form data
+    time_per_week = request.form.get('timePerWeek')
+    level = request.form.get('level')
+    goal = request.form.get('goal')
+    
+    # Process the data and generate a plan
+    # For now, we'll just pass the data to the template
+    return render_template('plan.html', 
+                         time_per_week=time_per_week,
+                         level=level,
+                         goal=goal)
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -128,10 +141,10 @@ def generate_schedule_with_gemini(user_data):
     """
     
     # Call Gemini API
-    if not api_key:
+    if not genai:
         raise ValueError("Gemini API key not configured")
         
-    response = model.generate_content(prompt)
+    response = genai.generate_content(prompt)
     response_text = response.text
     
     # Extract JSON content (may be in markdown code block)
@@ -205,17 +218,17 @@ def generate_backup_schedule(user_data):
     
     # Basic activity templates based on proficiency level
     activity_templates = {
-        "Beginner": [
+        "beginner": [
             {"activity_type": "Learning", "content_type": "Vocabulary", "description": "Learn 10 new basic words"},
             {"activity_type": "Practice", "content_type": "Speaking", "description": "Practice pronunciation"},
             {"activity_type": "Review", "content_type": "Vocabulary", "description": "Review previous vocabulary"}
         ],
-        "Intermediate": [
+        "intermediate": [
             {"activity_type": "Learning", "content_type": "Grammar", "description": "Study new grammar concept"},
             {"activity_type": "Practice", "content_type": "Listening", "description": "Listen to short dialogues"},
             {"activity_type": "Review", "content_type": "Grammar", "description": "Review previous grammar concepts"}
         ],
-        "Advanced": [
+        "advanced": [
             {"activity_type": "Practice", "content_type": "Reading", "description": "Read authentic materials"},
             {"activity_type": "Practice", "content_type": "Writing", "description": "Write short essay"},
             {"activity_type": "Review", "content_type": "Speaking", "description": "Practice conversation"}
@@ -223,14 +236,33 @@ def generate_backup_schedule(user_data):
     }
     
     # Select appropriate templates
-    templates = activity_templates.get(proficiency_level, activity_templates["Beginner"])
+    templates = activity_templates.get(proficiency_level.lower(), activity_templates["beginner"])
     
     # Generate daily plans
     daily_plans = []
     for day in available_days:
-        # Select 2 activities from templates for this day
+        # Select 2-3 activities from templates for this day
         day_activities = []
+        for template in templates[:2]:  # Use first 2 templates
+            activity = template.copy()
+            activity['duration_minutes'] = minutes_per_day // 2  # Split time between activities
+            day_activities.append(activity)
         
+        daily_plans.append({
+            "day": day,
+            "day_number": day_mapping[day],
+            "activities": day_activities
+        })
+    
+    # Create the schedule structure
+    schedule = {
+        "week_starting": datetime.now().strftime("%Y-%m-%d"),
+        "target_language": target_language,
+        "proficiency_level": proficiency_level,
+        "daily_plans": daily_plans
+    }
+    
+    return schedule
 
 if __name__ == '__main__':
     app.run(debug=True)
